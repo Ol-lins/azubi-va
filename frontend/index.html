@@ -3,48 +3,21 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Azubi Voice Assistant 🤖🔊</title>
+  <title >Azubi Voice Assistant</title>
 
-  <!-- Option A: inline styles (quick) -->
-  <style>
-    :root { --bg:#0f172a; --card:#111827; --muted:#94a3b8; --text:#e5e7eb; --accent:#22c55e; --danger:#f87171; }
-    * { box-sizing: border-box; }
-    body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji","Segoe UI Emoji"; background:var(--bg); color:var(--text); }
-    .wrap { max-width: 820px; margin: 40px auto; padding: 24px; }
-    .card { background: var(--card); border: 1px solid #1f2937; border-radius: 16px; padding: 20px; box-shadow: 0 10px 24px rgba(0,0,0,.25); }
-    h1 { margin:0 0 6px; font-size: 28px; }
-    p.sub { margin:0 0 18px; color: var(--muted); }
-    label { display:block; font-weight:600; margin: 14px 0 6px; }
-    textarea { width:100%; min-height:140px; padding:12px; border-radius:10px; border:1px solid #243244; background:#0b1220; color:var(--text); resize:vertical; }
-    .row { display:flex; gap:12px; flex-wrap:wrap; }
-    select, input[type="text"] { flex:1; min-width: 200px; padding:10px; border-radius:10px; border:1px solid #243244; background:#0b1220; color:var(--text); }
-    .controls { display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-top:10px; }
-    .switch { display:flex; align-items:center; gap:8px; color:var(--muted); font-size:14px; }
-    button { appearance:none; border:0; padding:12px 18px; border-radius:12px; font-weight:700; cursor:pointer; background:var(--accent); color:#052e13; transition: transform .04s ease; }
-    button:disabled { opacity:.6; cursor:not-allowed; }
-    button:active { transform: translateY(1px); }
-    .hint { color:var(--muted); font-size: 13px; margin-top:6px; }
-    .meta { display:flex; justify-content:space-between; align-items:center; margin-top:6px; }
-    .count { color:var(--muted); font-size:12px; }
-    .error { color: var(--danger); font-weight:600; margin-top:10px; }
-    audio { width:100%; margin-top:16px; }
-    .kbd { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; background:#0b1220; border:1px solid #243244; color:var(--text); padding:2px 6px; border-radius:6px; font-size: 0.9em; }
-    .footer { margin-top:18px; color:var(--muted); font-size: 12px; }
-  </style>
-
-  <!-- Option B: external CSS (nice for ongoing work) -->
-  <!-- <link rel="stylesheet" href="styles.css"> -->
+  <!-- External CSS -->
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <div class="wrap">
     <div class="card">
-      <h1>Azubi Voice Assistant</h1>
-      <p class="sub">Type text → get audio from your AWS backend (Polly via Lambda). For more natural speech, toggle “Add pauses (SSML)”.</p>
+      <h1 style="text-align:center;">Azubi Voice Assistant</h1>
+      <p class="sub">Type text and click on speak to generate audio. For more natural speech, toggle “Add pauses (SSML)”.</p>
 
       <label for="text">Text</label>
-      <textarea id="text" placeholder="Hello from Azubi VA. Don’t worry, I am not Skynet. The stipends will come. Please let Flo rest a little.">Hello from Azubi VA. Don’t worry, I am not Skynet. The stipends will come. Please let Flo rest a little.</textarea>
+      <textarea id="text" placeholder="Hello from Azubi VA. Don’t worry, the stipends will come. Please let Flo rest a little."></textarea>
       <div class="meta">
-        <div class="hint">Tip: keep it short during development.</div>
+        <div class="hint">Tip: keep your text short.</div>
         <div class="count" id="charCount">0 / 3000</div>
       </div>
 
@@ -52,8 +25,16 @@
         <div style="flex:2; min-width:240px;">
           <label for="voice">Voice</label>
           <select id="voice">
-            <option>Joanna</option><option>Matthew</option><option>Amy</option><option>Emma</option><option>Brian</option>
-            <option>Ivy</option><option>Kendra</option><option>Justin</option><option>Kevin</option><option>Kimberly</option>
+            <option>Joanna</option>
+            <option>Matthew</option>
+            <option>Amy</option>
+            <option>Emma</option>
+            <option>Brian</option>
+            <option>Ivy</option>
+            <option>Kendra</option>
+            <option>Justin</option>
+            <option>Kevin</option>
+            <option>Kimberly</option>
           </select>
         </div>
         <div style="flex:1; min-width:160px;">
@@ -75,18 +56,13 @@
       <div id="error" class="error" style="display:none;"></div>
 
       <audio id="player" controls preload="none"></audio>
-
-      <div class="footer">
-        API base: <span class="kbd" id="apiBaseDisplay"></span>
-      </div>
     </div>
   </div>
 
   <script>
     // ======= CONFIG =======
-    const API_BASE_URL = " https://3f1g9ndm9l.execute-api.us-east-1.amazonaws.com"; 
-    const MAX_CHARS = 3000; 
-    document.getElementById('apiBaseDisplay').textContent = API_BASE_URL;
+    const API_BASE_URL = "https://3f1g9ndm9l.execute-api.us-east-1.amazonaws.com";
+    const MAX_CHARS = 3000;
 
     const textEl = document.getElementById('text');
     const voiceEl = document.getElementById('voice');
@@ -107,17 +83,13 @@
     textEl.addEventListener('input', updateCount);
     updateCount();
 
-    // naive SSML helper: inserts a 400ms break after sentence-ending periods (basic English heuristics)
+    // naive SSML helper: inserts a 400ms break after periods
     function textToSsml(text) {
       const escaped = text
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;');
-
-      const withBreaks = escaped
-        .replace(/\.\s+/g, ". <break time='400ms'/> ")
-        .trim();
-
+      const withBreaks = escaped.replace(/\.\s+/g, ". <break time='400ms'/> ").trim();
       return `<speak>${withBreaks}</speak>`;
     }
 
@@ -141,7 +113,6 @@
         return;
       }
 
-      // build payload
       const payload = useSsml
         ? { text: textToSsml(text), voiceId, format, useSsml: true }
         : { text, voiceId, format };
